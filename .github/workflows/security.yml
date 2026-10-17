@@ -1,0 +1,33 @@
+name: DevSecOps Security Checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-security:
+    name: Terraform Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive
+
+      - name: Scan Terraform for misconfigurations
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/work" \
+            aquasec/trivy:latest \
+            config \
+            --exit-code 1 \
+            --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
+            /work
